@@ -13,7 +13,7 @@ public class PatchUtil {
         PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(entity);
 
         patchRequest.forEach((key, value) -> {
-            if ("null".equals(value) || "".equals(value)) {
+            if (value == null || "null".equals(value) || "".equals(value)) {
                 Class<?> propertyType = accessor.getPropertyType(key);
                 Object defaultValue = getDefaultValueForType(propertyType);
                 accessor.setPropertyValue(key, defaultValue);
