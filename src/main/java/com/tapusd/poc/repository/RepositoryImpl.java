@@ -18,16 +18,12 @@ public class RepositoryImpl implements Repository {
     public Post save(Post entity) {
         Long id = getId(entity);
         if (Objects.nonNull(id)) {
-            for (int i = 0; i < lists.size(); i++) {
-                Post post = lists.get(i);
-                if (post.getId().equals(id)) {
-                    lists.set(i, entity);
-                }
-            }
+            entity.setId(id);
+            lists.set((int) (id - 1), entity);
+        } else {
+            setId(entity, (lists.size() + 1L));
+            lists.add(entity);
         }
-
-        setId(entity, (lists.size() + 1L));
-        lists.add(entity);
         return entity;
     }
 

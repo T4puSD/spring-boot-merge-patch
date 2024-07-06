@@ -2,7 +2,7 @@ package com.tapusd.poc.domian;
 
 import java.util.Set;
 
-public class Post {
+public class Post implements Cloneable {
     private Long id;
     private String author;
     private String title;
@@ -47,5 +47,20 @@ public class Post {
 
     public void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+
+    @Override
+    public Post clone() {
+        try {
+            Post post = (Post) super.clone();
+            post.setId(id);
+            post.setAuthor(author);
+            post.setTitle(title);
+            post.setContent(content);
+            post.setTags(tags);
+            return post;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
