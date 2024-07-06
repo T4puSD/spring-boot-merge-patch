@@ -23,7 +23,7 @@ public class PatchUtil {
         });
     }
 
-    private static Object getDefaultValueForType(Class<?> type) {
+    public static Object getDefaultValueForType(Class<?> type) {
         if (type == Byte.TYPE) {
             return 0;
         } else if (type == Short.TYPE) {
