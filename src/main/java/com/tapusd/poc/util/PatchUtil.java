@@ -24,14 +24,22 @@ public class PatchUtil {
     }
 
     private static Object getDefaultValueForType(Class<?> type) {
-        if (type == Integer.TYPE || type == Integer.class) {
-            return 0;   // Default value for int
-        } else if (type == BigDecimal.class) {
-            return BigDecimal.ZERO; // Default value for boolean
-        } else if (type == Boolean.TYPE || type == Boolean.class) {
-            return false; // Default value for boolean
-        } else if (type.isPrimitive()) {
-            return 0;   // Default value for other primitives
+        if (type == Byte.TYPE) {
+            return 0;
+        } else if (type == Short.TYPE) {
+            return 0;
+        } else if (type == Integer.TYPE) {
+            return 0;
+        } else if (type == Long.TYPE) {
+            return 0L;
+        } else if (type == Float.TYPE) {
+            return 0F;
+        } else if (type == Double.TYPE) {
+            return 0D;
+        } else if (type == Boolean.TYPE) {
+            return false;
+        } else if (type == Character.TYPE) {
+            return '\u0000';
         } else {
             return null; // Default value for Object types
         }
