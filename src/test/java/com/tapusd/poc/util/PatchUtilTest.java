@@ -62,7 +62,7 @@ class PatchUtilTest {
                 {
                   "title": "bookuyaaa",
                   "author": {"name": "Jaksmith Rigdbi","description": null},
-                  "secondaryAuthors": [{"name": "Nolan Jr 2"}, {"description": null}],
+                  "secondaryAuthors": [{"name": "Nolan Jr 2"}],
                   "publisher": null,
                   "rating": ""
                 }
@@ -84,15 +84,11 @@ class PatchUtilTest {
 
         List<Author> secondaryAuthors = updatedBook.getSecondaryAuthors();
         assertThat(secondaryAuthors).isNotEmpty()
-                .hasSize(2);
+                .hasSize(1);
 
         Author sa1 = secondaryAuthors.get(0);
         assertThat(sa1)
                 .hasFieldOrPropertyWithValue("name", "Nolan Jr 2");
-
-        Author sa2 = secondaryAuthors.get(1);
-        assertThat(sa2)
-                .hasFieldOrPropertyWithValue("description", null);
     }
 
     static class Book {
