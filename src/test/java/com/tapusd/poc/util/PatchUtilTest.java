@@ -1,51 +1,92 @@
 package com.tapusd.poc.util;
 
-import org.assertj.core.api.Assertions;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PatchUtilTest {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    void applyPatch() {
-        Book book = new Book(1L, "Book 1", "T4pusd", "Akota Publishers", 1, 100.5, 4.5);
+    void applyPatch_invalid_key_not_present_in_class_should_throw_exception() throws JsonProcessingException {
+        Book book = new Book(1L, "Book 1", new Author("Nolan Jr.", "Renowned Poet of the modern era!"), "Akota Publishers", 1, 100.5, 4.5);
 
-        Map<String, Object> patchRequest = new HashMap<>();
-        patchRequest.put("title", "bookuyaaa");
-        patchRequest.put("author", "Nolan Jr.");
-        patchRequest.put("publisher", null);
-        patchRequest.put("isbn", null);
-        patchRequest.put("price", "null");
-        patchRequest.put("rating", "");
+        String patchValue = """
+                {
+                  "ababaab": "abababba"
+                }
+                """;
 
-        PatchUtil.applyPatch(book, patchRequest);
+        JsonNode patchRequest = OBJECT_MAPPER.readTree(patchValue);
 
-        assertThat(book)
+        assertThatThrownBy(() -> {
+            PatchUtil.applyPatch(book, patchRequest);
+        }).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void applyPatch_patch_request_contains_id_should_throw_exception() throws JsonProcessingException {
+        Book book = new Book(1L, "Book 1", new Author("Nolan Jr.", "Renowned Poet of the modern era!"), "Akota Publishers", 1, 100.5, 4.5);
+
+        String patchValue = """
+                {
+                  "id": 20,
+                  "title": "bookuyaaa"
+                }
+                """;
+
+        JsonNode patchRequest = OBJECT_MAPPER.readTree(patchValue);
+
+        assertThatThrownBy(() -> {
+            PatchUtil.applyPatch(book, patchRequest);
+        }).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void applyPatch() throws JsonProcessingException {
+        Book book = new Book(1L, "Book 1", new Author("Nolan Jr.", "Renowned Poet of the modern era!"), "Akota Publishers", 1, 100.5, 4.5);
+
+        String patchValue = """
+                {
+                  "title": "bookuyaaa",
+                  "author": {"name": "Jaksmith Rigdbi","description": null},
+                  "publisher": null,
+                  "rating": ""
+                }
+                """;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode patchRequest = objectMapper.readTree(patchValue);
+        Book updatedBook = PatchUtil.applyPatch(book, patchRequest);
+
+        assertThat(updatedBook)
                 .isNotNull()
                 .hasFieldOrPropertyWithValue("title", "bookuyaaa")
-                .hasFieldOrPropertyWithValue("author", "Nolan Jr.")
+                .hasFieldOrPropertyWithValue("author.name", "Jaksmith Rigdbi")
+                .hasFieldOrPropertyWithValue("author.description", null)
                 .hasFieldOrPropertyWithValue("publisher", null)
-                .hasFieldOrPropertyWithValue("isbn",0)
-                .hasFieldOrPropertyWithValue("price", null)
+                .hasFieldOrPropertyWithValue("isbn",1)
+                .hasFieldOrPropertyWithValue("price", 100.5)
                 .hasFieldOrPropertyWithValue("rating", 0D);
     }
 
     static class Book {
         private Long id;
         private String title;
-        private String author;
+        private Author author;
         private String publisher;
         private int isbn;
         private Double price;
         private double rating;
 
-        public Book(Long id, String title, String author, String publisher, int isbn, Double price, double rating) {
+        public Book() {
+        }
+
+        public Book(Long id, String title, Author author, String publisher, int isbn, Double price, double rating) {
             this.id = id;
             this.title = title;
             this.author = author;
@@ -71,11 +112,11 @@ class PatchUtilTest {
             this.title = title;
         }
 
-        public String getAuthor() {
+        public Author getAuthor() {
             return author;
         }
 
-        public void setAuthor(String author) {
+        public void setAuthor(Author author) {
             this.author = author;
         }
 
@@ -112,45 +153,31 @@ class PatchUtilTest {
         }
     }
 
-    @Test
-    void defaultValue() {
-        Object stringDefaultValue = PatchUtil.getDefaultValueForType(String.class);
-        assertThat(stringDefaultValue).isNull();
+    static class Author {
+        private String name;
+        private String description;
 
-        Object bookDefaultValue = PatchUtil.getDefaultValueForType(Book.class);
-        assertThat(bookDefaultValue).isNull();
+        public Author() {}
 
-        Object integerDefaultValue = PatchUtil.getDefaultValueForType(Integer.class);
-        assertThat(integerDefaultValue).isNull();
+        public Author(String name, String description) {
+            this.name = name;
+            this.description = description;
+        }
 
-        Object primitiveIntDefaultValue = PatchUtil.getDefaultValueForType(int.class);
-        assertThat(primitiveIntDefaultValue).isEqualTo(0);
+        public String getName() {
+            return name;
+        }
 
-        Object longDefaultValue = PatchUtil.getDefaultValueForType(Long.class);
-        assertThat(longDefaultValue).isNull();
+        public void setName(String name) {
+            this.name = name;
+        }
 
-        Object primitiveLongDefaultValue = PatchUtil.getDefaultValueForType(long.class);
-        assertThat(primitiveLongDefaultValue).isEqualTo(0L);
+        public String getDescription() {
+            return description;
+        }
 
-        Object shortDefaultValue = PatchUtil.getDefaultValueForType(short.class);
-        assertThat(shortDefaultValue).isEqualTo(0);
-
-        Object byteDefaultValue = PatchUtil.getDefaultValueForType(byte.class);
-        assertThat(byteDefaultValue).isEqualTo(0);
-
-        Object floatDefaultValue = PatchUtil.getDefaultValueForType(float.class);
-        assertThat(floatDefaultValue).isEqualTo(0F);
-
-        Object doubleDefaultValue = PatchUtil.getDefaultValueForType(double.class);
-        assertThat(doubleDefaultValue).isEqualTo(0D);
-
-        Object booleanDefaultValue = PatchUtil.getDefaultValueForType(boolean.class);
-        assertThat(booleanDefaultValue).isEqualTo(false);
-
-        Object primitiveBooleanDefaultValue = PatchUtil.getDefaultValueForType(Boolean.class);
-        assertThat(primitiveBooleanDefaultValue).isNull();;
-
-        Object charDefaultValue = PatchUtil.getDefaultValueForType(char.class);
-        assertThat(charDefaultValue).isEqualTo('\u0000');
+        public void setDescription(String description) {
+            this.description = description;
+        }
     }
 }

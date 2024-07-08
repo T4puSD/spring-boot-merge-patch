@@ -54,10 +54,9 @@ public class PostController {
     }
 
     @PatchMapping("/{id}")
-    public Post updatePartial(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    public Post updatePartial(@PathVariable Long id, @RequestBody JsonNode body) {
         Post post = repository.findById(id).orElseThrow();
-        Post clone = post.clone();
-        PatchUtil.applyPatch(clone, body);
-        return save(clone);
+        Post updatedPost = PatchUtil.applyPatch(post, body);
+        return save(updatedPost);
     }
 }
