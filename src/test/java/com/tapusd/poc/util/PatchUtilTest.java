@@ -50,7 +50,40 @@ class PatchUtilTest {
     }
 
     @Test
-    void applyPatch() throws JsonProcessingException {
+    void applyPatch_nested_objects_should_pass() throws JsonProcessingException {
+        Book book = new Book(1L, "Book 1",
+                new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
+                List.of(new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
+                        new Author("William Smith", "All time best romantic author!")
+                ),
+                "Akota Publishers", 1, 100.5, 4.5);
+
+        String patchValue = """
+                {
+                  "title": "bookuyaaa",
+                  "author": {"name": "Jaksmith Rigdbi","description": null},
+                  "publisher": null,
+                  "rating": ""
+                }
+                """;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode patchRequest = objectMapper.readTree(patchValue);
+        Book updatedBook = PatchUtil.applyPatch(book, patchRequest);
+
+        assertThat(updatedBook)
+                .isNotNull()
+                .hasFieldOrPropertyWithValue("title", "bookuyaaa")
+                .hasFieldOrPropertyWithValue("author.name", "Jaksmith Rigdbi")
+                .hasFieldOrPropertyWithValue("author.description", null)
+                .hasFieldOrPropertyWithValue("publisher", null)
+                .hasFieldOrPropertyWithValue("isbn", 1)
+                .hasFieldOrPropertyWithValue("price", 100.5)
+                .hasFieldOrPropertyWithValue("rating", 0D);
+    }
+
+    @Test
+    void applyPatch_on_list_should_add_to_existing_array_and_increment_size_instead_of_replacing_existing_list() throws JsonProcessingException {
         Book book = new Book(1L, "Book 1",
                 new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
                 List.of(new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
@@ -84,9 +117,9 @@ class PatchUtilTest {
 
         List<Author> secondaryAuthors = updatedBook.getSecondaryAuthors();
         assertThat(secondaryAuthors).isNotEmpty()
-                .hasSize(1);
+                .hasSize(3);
 
-        Author sa1 = secondaryAuthors.get(0);
+        Author sa1 = secondaryAuthors.get(2);
         assertThat(sa1)
                 .hasFieldOrPropertyWithValue("name", "Nolan Jr 2");
     }
