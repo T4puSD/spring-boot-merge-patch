@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -48,12 +51,18 @@ class PatchUtilTest {
 
     @Test
     void applyPatch() throws JsonProcessingException {
-        Book book = new Book(1L, "Book 1", new Author("Nolan Jr.", "Renowned Poet of the modern era!"), "Akota Publishers", 1, 100.5, 4.5);
+        Book book = new Book(1L, "Book 1",
+                new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
+                List.of(new Author("Nolan Jr.", "Renowned Poet of the modern era!"),
+                        new Author("William Smith", "All time best romantic author!")
+                ),
+                "Akota Publishers", 1, 100.5, 4.5);
 
         String patchValue = """
                 {
                   "title": "bookuyaaa",
                   "author": {"name": "Jaksmith Rigdbi","description": null},
+                  "secondaryAuthors": [{"name": "Nolan Jr 2"}, {"description": null}],
                   "publisher": null,
                   "rating": ""
                 }
@@ -69,15 +78,28 @@ class PatchUtilTest {
                 .hasFieldOrPropertyWithValue("author.name", "Jaksmith Rigdbi")
                 .hasFieldOrPropertyWithValue("author.description", null)
                 .hasFieldOrPropertyWithValue("publisher", null)
-                .hasFieldOrPropertyWithValue("isbn",1)
+                .hasFieldOrPropertyWithValue("isbn", 1)
                 .hasFieldOrPropertyWithValue("price", 100.5)
                 .hasFieldOrPropertyWithValue("rating", 0D);
+
+        List<Author> secondaryAuthors = updatedBook.getSecondaryAuthors();
+        assertThat(secondaryAuthors).isNotEmpty()
+                .hasSize(2);
+
+        Author sa1 = secondaryAuthors.get(0);
+        assertThat(sa1)
+                .hasFieldOrPropertyWithValue("name", "Nolan Jr 2");
+
+        Author sa2 = secondaryAuthors.get(1);
+        assertThat(sa2)
+                .hasFieldOrPropertyWithValue("description", null);
     }
 
     static class Book {
         private Long id;
         private String title;
         private Author author;
+        private List<Author> secondaryAuthors;
         private String publisher;
         private int isbn;
         private Double price;
@@ -90,6 +112,17 @@ class PatchUtilTest {
             this.id = id;
             this.title = title;
             this.author = author;
+            this.publisher = publisher;
+            this.isbn = isbn;
+            this.price = price;
+            this.rating = rating;
+        }
+
+        public Book(Long id, String title, Author author, List<Author> secondaryAuthors, String publisher, int isbn, Double price, double rating) {
+            this.id = id;
+            this.title = title;
+            this.author = author;
+            this.secondaryAuthors = secondaryAuthors;
             this.publisher = publisher;
             this.isbn = isbn;
             this.price = price;
@@ -118,6 +151,14 @@ class PatchUtilTest {
 
         public void setAuthor(Author author) {
             this.author = author;
+        }
+
+        public List<Author> getSecondaryAuthors() {
+            return secondaryAuthors;
+        }
+
+        public void setSecondaryAuthors(List<Author> secondaryAuthors) {
+            this.secondaryAuthors = secondaryAuthors;
         }
 
         public String getPublisher() {
@@ -157,7 +198,8 @@ class PatchUtilTest {
         private String name;
         private String description;
 
-        public Author() {}
+        public Author() {
+        }
 
         public Author(String name, String description) {
             this.name = name;
