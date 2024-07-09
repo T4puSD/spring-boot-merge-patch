@@ -8,6 +8,10 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 
+/**
+ * This util utilize <b>com.github.java-json-tools</b> dependency to perform merge patch
+ * which uses reflection and not thread safe as discussed in this github <a href="https://github.com/FasterXML/jackson-databind/issues/2969#issuecomment-1272273682">issue</a>
+ */
 public class JsonPatchUtil {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private JsonPatchUtil() {}
@@ -19,7 +23,6 @@ public class JsonPatchUtil {
         Assert.isNull(idNode, "Patch request body should not contains id!");
 
         try {
-
             JsonNode entityNode = OBJECT_MAPPER.convertValue(entity, JsonNode.class);
             JsonMergePatch jsonMergePatch = OBJECT_MAPPER.readValue(patchRequest.toString(), JsonMergePatch.class);
             JsonNode updatedJsonNode = jsonMergePatch.apply(entityNode);
