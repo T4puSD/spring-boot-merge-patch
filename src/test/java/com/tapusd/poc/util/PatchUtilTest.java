@@ -117,9 +117,9 @@ class PatchUtilTest {
 
         List<Author> secondaryAuthors = updatedBook.getSecondaryAuthors();
         assertThat(secondaryAuthors).isNotEmpty()
-                .hasSize(3);
+                .hasSize(1);
 
-        Author sa1 = secondaryAuthors.get(2);
+        Author sa1 = secondaryAuthors.get(0);
         assertThat(sa1)
                 .hasFieldOrPropertyWithValue("name", "Nolan Jr 2");
     }
