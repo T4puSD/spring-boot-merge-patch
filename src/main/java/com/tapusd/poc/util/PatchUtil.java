@@ -19,7 +19,7 @@ public class PatchUtil {
 
     static {
         // disabling the collection type merging strategy
-        // object mapper will now only replace array type installed of merging during patch
+        // object mapper will now only replace array type instead of merging during patch
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configOverride(ArrayNode.class)
                 .setMergeable(false);
