@@ -1,18 +1,168 @@
 package com.tapusd.poc.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PatchUtilTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    @Test
+    void applyPatch_empty_string_and_null_value_both_should_replace_with_null_after_patch () throws JsonProcessingException {
+        Map<String, Object> map = new HashMap<>();
+        map.put("a", "b");
+        map.put("c", "d");
+
+        String patchValue = """
+                {
+                  "a": "",
+                  "c": null
+                }
+                """;
+
+        JsonNode jsonNode = OBJECT_MAPPER.convertValue(map, JsonNode.class);
+        JsonNode patch = OBJECT_MAPPER.readTree(patchValue);
+        Map<String, Object> updatedMap = PatchUtil.applyPatch(map, patch);
+
+        assertThat(updatedMap)
+                .isNotNull()
+                .hasFieldOrPropertyWithValue("a", null)
+                .hasFieldOrPropertyWithValue("c", null);
+    }
+
+    @Test
+    void applyPatch_test_on_multiple_collection_type_should_replace_collection_with_updated_value() throws JsonProcessingException {
+        Coll coll = new Coll();
+        coll.setArray(new int[]{1, 2, 3});
+        coll.setList(List.of("a", "b", "c"));
+        coll.setSet(Set.of(1,2,3));
+
+        Coll2 coll2 = new Coll2();
+        coll2.setA("b");
+        coll2.setC("d");
+        coll2.setE("f");
+        coll2.setG("h");
+
+        coll.setMap(coll2);
+
+        String patchValue = """
+                {
+                  "array": [5, 6],
+                  "list": [6, 7],
+                  "set": [2, 2, 3, 4],
+                  "map": {
+                    "a": "It's A",
+                    "c": "",
+                    "e": null
+                  }
+                }
+                """;
+
+        JsonNode patch = OBJECT_MAPPER.readTree(patchValue);
+        Coll updatedCol = PatchUtil.applyPatch(coll, patch);
+
+        assertThat(updatedCol).isNotNull()
+                .hasFieldOrPropertyWithValue("array", new int[]{5, 6})
+                .hasFieldOrPropertyWithValue("list", List.of("6", "7"))
+                .hasFieldOrPropertyWithValue("set", Set.of(2, 3, 4));
+
+        Coll2 coll2Updated = updatedCol.getMap();
+
+        assertThat(coll2Updated).isNotNull()
+                .hasFieldOrPropertyWithValue("a", "It's A")
+                .hasFieldOrPropertyWithValue("c", null)
+                .hasFieldOrPropertyWithValue("e", null)
+                .hasFieldOrPropertyWithValue("g", "h");
+
+    }
+
+    static class Coll {
+        private int[] array;
+        private List<String> list;
+        private Set<Integer> set;
+        private Coll2 map;
+
+        public int[] getArray() {
+            return array;
+        }
+
+        public void setArray(int[] array) {
+            this.array = array;
+        }
+
+        public List<String> getList() {
+            return list;
+        }
+
+        public void setList(List<String> list) {
+            this.list = list;
+        }
+
+        public Set<Integer> getSet() {
+            return set;
+        }
+
+        public void setSet(Set<Integer> set) {
+            this.set = set;
+        }
+
+        public Coll2 getMap() {
+            return map;
+        }
+
+        public void setMap(Coll2 map) {
+            this.map = map;
+        }
+    }
+
+    static class Coll2 {
+        private String a;
+        private String c;
+        private String e;
+        private String g;
+
+        public String getA() {
+            return a;
+        }
+
+        public void setA(String a) {
+            this.a = a;
+        }
+
+        public String getC() {
+            return c;
+        }
+
+        public void setC(String c) {
+            this.c = c;
+        }
+
+        public String getE() {
+            return e;
+        }
+
+        public void setE(String e) {
+            this.e = e;
+        }
+
+        public String getG() {
+            return g;
+        }
+
+        public void setG(String g) {
+            this.g = g;
+        }
+    }
 
     @Test
     void applyPatch_invalid_key_not_present_in_class_should_throw_exception() throws JsonProcessingException {
